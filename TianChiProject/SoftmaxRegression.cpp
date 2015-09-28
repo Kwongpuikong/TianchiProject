@@ -30,12 +30,6 @@ void SoftmaxRegression::copyfrom(SMR smr){
 	cost = getcost();
 }
 
-Mat SoftmaxRegression::getWeight(){Mat res; Weight.copyTo(res); return res;}
-
-Mat SoftmaxRegression::getWgrad(){Mat res; Wgrad.copyTo(res); return res;}
-
-double SoftmaxRegression::getcost(){return cost;}
-
 void SoftmaxRegression::weightRandomInit(double epsilon){
 
 	Weight = Mat::ones(nclasses, inputSize, CV_64FC1);
@@ -152,3 +146,9 @@ void SoftmaxRegression::train(Mat &x, Mat &y, int batch, double lambda, double l
 int SoftmaxRegression::getnclasses(){return nclasses;}
 
 int SoftmaxRegression::getinputSize(){return inputSize;}
+
+Mat SoftmaxRegression::getWeight(){ Mat res; Weight.copyTo(res); return res; }
+
+Mat SoftmaxRegression::getWgrad(){ Mat res; Wgrad.copyTo(res); return res; }
+
+double SoftmaxRegression::getcost(){ return cost; }
