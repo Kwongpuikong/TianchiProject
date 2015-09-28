@@ -17,7 +17,7 @@ Mat concatenateMat(vector<Mat> &vec){
 	int height = vec[0].rows;
 	int width = vec[0].cols;
 	Mat res = Mat::zeros(height*width, vec.size(), CV_64FC1);
-	for(int i=0; i<vec.size(); i++){
+	for(int i=0; i < vec.size(); i++){
 		Mat img(height, width, CV_64FC1);
 
 		vec[i].convertTo(img, CV_64FC1);
@@ -38,12 +38,14 @@ int ReverseInt(int i){
 	ch2 = (i >> 8) & 255;
 	ch3 = (i >> 16) & 255;
 	ch4 = (i >> 24) & 255;
-	return ((int)ch1 << 24) + ((int)ch2 << 16) + ((int)ch3) << 8 + ch4;
+	return ((int)ch1 << 24) + ((int)ch2 << 16) + ((int)ch3 << 8) + ch4;
 }
 
 void read_Mnist(string filename, vector<Mat> &vec){
 
 	ifstream file(filename, ios::binary);
+	// for debugging...
+	// cout << "file status: " << file.is_open() << endl;
 	if(file.is_open()){
 		
 		int magic_number = 0;
@@ -54,12 +56,20 @@ void read_Mnist(string filename, vector<Mat> &vec){
 		magic_number = ReverseInt(magic_number);
 		file.read((char*) &number_of_images, sizeof(number_of_images));
 		number_of_images = ReverseInt(number_of_images);
+		// for debugging...
+		// cout << "number_of_images: " << number_of_images << endl;
 		file.read((char*) &n_rows, sizeof(n_rows));
 		n_rows = ReverseInt(n_rows);
 		file.read((char*) &n_cols, sizeof(n_cols));
 		n_cols = ReverseInt(n_cols);
-		for(int i = 0; i<number_of_images; i++){
+		for(int i = 0; i < number_of_images; i++){
 		
+			// for debugging...
+			if ((i+1) % 5000 == 0){
+			
+				cout << "finish reading no." << (i - 4998) << "~" << (i + 1) << "  images" << endl;
+			}
+			
 			Mat tpmat = Mat::zeros(n_rows, n_cols, CV_8UC1);
 			for(int r=0; r<n_rows; r++){
 				for(int c=0; c<n_cols; c++){
@@ -88,6 +98,12 @@ void read_Mnist_Label(string filename, Mat &mat){
 		number_of_images = ReverseInt(number_of_images);
 		
 		for(int i=0; i < number_of_images; ++i){
+
+			// for debugging...
+			if ((i + 1) % 5000 == 0){
+			
+				cout << "finish reading no." << (i - 4998) << "~" << (i + 1) << " labels" << endl;
+			}
 		
 			unsigned char temp = 0;
 			file.read((char*) &temp, sizeof(temp));
@@ -108,4 +124,17 @@ Mat dsigmoid(Mat &a){
 	Mat res = 1.0 - a;
 	res = res.mul(a);
 	return res;
+}
+
+void readData(Mat &x, Mat &y, string xpath, string ypath, int number_of_images){
+
+	//read MNIST iamge into OpenCV Mat vector
+	int image_size = 28 * 28;
+	vector<Mat> vec;
+	//vec.resize(number_of_images, cv::Mat(28, 28, CV_8UC1));
+	read_Mnist(xpath, vec);
+	//read MNIST label into double vector
+	y = Mat::zeros(1, number_of_images, CV_64FC1);
+	read_Mnist_Label(ypath, y);
+	x = concatenateMat(vec);
 }

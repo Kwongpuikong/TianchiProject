@@ -6,6 +6,7 @@
 #include <math.h>
 #include <iostream>
 #include "SparseAutoencoder.h"
+#include "Basefun.h"
 
 #define ATD at<double>
 #define IS_TEST_SA 0
@@ -13,11 +14,17 @@
 using namespace std;
 using namespace cv;
 
+typedef SparseAutoencoderActivation SAA;
+
 SparseAutoencoder::SparseAutoencoder(int _inputSize, int _hiddenSize){
 
 	inputSize = _inputSize;
 	hiddenSize = _hiddenSize;
+	cost = 0.0;
 	weightRandomInit(0.12);
+	// for debugging...
+	// cout << W1 << endl;
+
 }
 
 void SparseAutoencoder::weightRandomInit(double epsilon){
@@ -34,11 +41,11 @@ void SparseAutoencoder::weightRandomInit(double epsilon){
 	}
 	W1 = W1 * (2*epsilon) - epsilon;
 
-	W2 = Mat::ones(hiddenSize, inputSize, CV_64FC1);
-	for(int i=0; i < hiddenSize; i++){
+	W2 = Mat::ones(inputSize, hiddenSize, CV_64FC1);
+	for(int i=0; i < inputSize; i++){
 	
 		pData = W2.ptr<double>(i);
-		for(int j=0; j < inputSize; j++){
+		for(int j=0; j < hiddenSize; j++){
 		
 			pData[j] = randu<double>();
 		}
@@ -63,14 +70,24 @@ void SparseAutoencoder::weightRandomInit(double epsilon){
 	W2grad = Mat::zeros(inputSize, hiddenSize, CV_64FC1);
 	b1grad = Mat::zeros(hiddenSize, 1, CV_64FC1);
 	b2grad = Mat::zeros(inputSize, 1, CV_64FC1);
-	cost = 0.0;
 }
 
 SAA SparseAutoencoder::getSparseAutoencoderActivation(cv::Mat &data){
 
 	SAA acti;
 	data.copyTo(acti.aInput);
+	// for debugging...
+	/*
+	cout << "acti.input.rows: " << acti.aInput.rows << endl
+		<< "acti.input.cols: " << acti.aInput.cols << endl
+		<< "W1.rows: " << W1.rows << endl
+		<< "W1.cols: " << W1.cols << endl
+		<< "W2.rows: " << W2.rows << endl
+		<< "W2.cols: " << W2.cols << endl;
+		*/
+
 	acti.aHidden = W1 * acti.aInput + repeat(b1, 1, data.cols);
+	acti.aHidden = sigmoid(acti.aHidden);
 	acti.aOutput = W2 * acti.aHidden + repeat(b2, 1, data.cols);
 	acti.aOutput = sigmoid(acti.aOutput);
 	return acti;
@@ -80,6 +97,10 @@ void SparseAutoencoder::Cost(cv::Mat &data, double lambda, double sparsityParam,
 
 	int nfeatures = data.rows;
 	int nsamples = data.cols;
+	// for debugging...
+	// cout << "nfeatures: " << nfeatures << endl
+	//	 << "nsamples: " << nsamples << endl;
+
 	SAA acti = getSparseAutoencoderActivation(data);
 
 	Mat errtp = acti.aOutput - data;
@@ -93,7 +114,10 @@ void SparseAutoencoder::Cost(cv::Mat &data, double lambda, double sparsityParam,
 	pj /= nsamples; 
 
 	// err2 is the weight decay part
-	double err2 = sum(W1)[0] +sum(W2)[0];
+	Mat w1_square, w2_square;
+	pow(W1, 2.0, w1_square);
+	pow(W2, 2.0, w2_square);
+	double err2 = sum(w1_square)[0] +sum(w2_square)[0];
 	err2 *= (lambda/2.0);
 
 	Mat err3;
@@ -102,11 +126,11 @@ void SparseAutoencoder::Cost(cv::Mat &data, double lambda, double sparsityParam,
 	log(temp, temp);
 	temp *= sparsityParam;
 	temp.copyTo(err3);
-	temp = (1-sparsityParam) / (1-pj);
+	temp = (1 - sparsityParam) / (1 - pj);
 	log(temp, temp);
-	temp *= (1-sparsityParam);
+	temp *= (1 - sparsityParam);
 	err3 += temp;
-	cost = err + err2 + sum(err3)[0]*beta;
+	cost = err + err2 + sum(err3)[0] * beta;
 
 	Mat delta3 = -(data - acti.aOutput);
 	delta3 = delta3.mul(dsigmoid(acti.aOutput));
@@ -138,20 +162,30 @@ void SparseAutoencoder::updateWeights(cv::Mat w1g, cv::Mat w2g, cv::Mat b1g, cv:
 void SparseAutoencoder::gradientChecking(cv::Mat &data, double lambda, double sparsityParam, double beta){
 
 	Cost(data, lambda, sparsityParam, beta);
+
 	Mat w1g (W1grad);
+	// for debugging...
+	// cout << w1g.ATD(0, 0) << endl;
+
 	cout<<"test sparse autoencoder !!!"<<endl;
 	double epsilon = 1e-4;
-	for(int i=0; i<W1.rows; i++){
+	for(int i=0; i<w1g.rows; i++){
 	
-		for(int j=0; j<W1.cols; j++){
+		for(int j=0; j<w1g.cols; j++){
 		
 			double memo = W1.ATD(i,j);
 			W1.ATD(i,j) = memo + epsilon;
 			Cost(data, lambda, sparsityParam, beta);
 			double value1 = cost;
+			// for debugging...
+			// cout << W1.ATD(i,j) << "\t" << cost << "\t" << value1 << endl;
+
 			W1.ATD(i,j) = memo - epsilon;
 			Cost(data, lambda, sparsityParam, beta);
 			double value2 = cost;
+			// for debugging...
+			// cout << W1.ATD(i,j) << "\t" << cost << "\t" << value2 << endl;
+
 			double tp = (value1 - value2) / (2*epsilon);
 			cout << i << ", " << j << ", " << tp << ", " << w1g.ATD(i,j)
 				<< ", " << w1g.ATD(i,j) / tp << endl;
@@ -160,11 +194,18 @@ void SparseAutoencoder::gradientChecking(cv::Mat &data, double lambda, double sp
 	}
 }
 
-void SparseAutoencoder::train(cv::Mat &data, int batch, double lambda, double sparsityParam, double beta, double lrate, double maxIter){
+void SparseAutoencoder::train(cv::Mat &data, int batch, double lambda, double sparsityParam, double beta, double lrate, int maxIter){
 
 	int nfeatures = data.rows;
 	int nsamples = data.cols;
 	weightRandomInit(0.12);
+	// for debugging...
+	/*
+	cout << "Training sc..."
+		<< "input_size of sc: " << inputSize << endl
+		<< "hidden_size of sc: " << hiddenSize << endl;
+		*/
+
 	if(IS_TEST_SA){
 	
 		gradientChecking(data, lambda, sparsityParam, beta);
@@ -173,12 +214,12 @@ void SparseAutoencoder::train(cv::Mat &data, int batch, double lambda, double sp
 	
 		int converge = 0;
 		double lastcost = 0.0;
-		cout << "sparse autoencoder learning..." << endl;
+		cout << "\t starting training....\n" << endl;
 		while(converge < maxIter){
 		
 			int randomNum = rand() % (data.cols - batch);
-			Rect roi = Rect(randomNum, 0, batch, data.rows);
 
+			Rect roi = cv::Rect(randomNum, 0, batch, data.rows);
 			Mat batchX = data(roi);
 			Cost(batchX, lambda, sparsityParam, beta);
 			cout << "learning step: " << converge

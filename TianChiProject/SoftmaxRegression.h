@@ -7,11 +7,7 @@
 #include <vector>
 #include <string>
 #include <math.h>
-#include "SparseAutoencoder.h"
-#include "SoftmaxRegression.h"
-#include "SparseAutoencoderActivation.h"
-#include "StackedNetwork.h"
-#include "Basefun.h"
+
 
 /*softmax regression layer*/
 class SoftmaxRegression{
@@ -20,7 +16,7 @@ public:
 	SoftmaxRegression(){};
 	SoftmaxRegression(int _inputSize, int _nclasses);
 	
-	void copyfrom(SMR smr);
+	void copyfrom(SoftmaxRegression smr);
 	void weightRandomInit(double epsilon);
 	void Cost(cv::Mat &x, cv::Mat &y, double lambda);
 	void gradientChecking(cv::Mat &x, cv::Mat &y, double lambda);
@@ -38,7 +34,5 @@ private:
 	int nclasses;
 	double cost;
 };
-
-typedef SoftmaxRegression SMR;
 
 #endif

@@ -20,4 +20,6 @@ cv::Mat sigmoid(cv::Mat &mat);
 
 cv::Mat dsigmoid(cv::Mat &mat);
 
+void readData(cv::Mat &x, cv::Mat &y, std::string xpath, std::string ypath, int number_of_images);
+
 #endif

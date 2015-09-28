@@ -8,8 +8,7 @@
 #include <string>
 #include <math.h>
 #include "SparseAutoencoderActivation.h"
-#include "SoftmaxRegression.h"
-#include "Basefun.h"
+
 
 /*A two hidden layers sparse auto encoder*/
 class SparseAutoencoder{
@@ -20,11 +19,11 @@ public:
 
 	// initial the weights of sparseAutoencoder
 	void weightRandomInit(double epsilon);
-	SAA getSparseAutoencoderActivation(cv::Mat &data);
+	SparseAutoencoderActivation getSparseAutoencoderActivation(cv::Mat &data);
 	void Cost(cv::Mat &data, double lambda, double sparsityParam, double beta);
 	void updateWeights(cv::Mat w1g, cv::Mat w2g, cv::Mat b1g, cv::Mat b2g, double lrate);
 	void gradientChecking(cv::Mat &data, double lambda, double sparsityParam, double beta);
-	void train(cv::Mat &data, int batch, double lambda, double sparsityParam, double beta, double lrate, double maxIter);
+	void train(cv::Mat &data, int batch, double lambda, double sparsityParam, double beta, double lrate, int maxIter);
 	cv::Mat getW1();
 	cv::Mat getW2();
 	cv::Mat getb1();
@@ -45,7 +44,5 @@ private:
 	cv::Mat b2grad;
 	double cost;
 };
-
-typedef SparseAutoencoder SA;
 
 #endif

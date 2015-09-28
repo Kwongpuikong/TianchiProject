@@ -19,9 +19,10 @@ SoftmaxRegression::SoftmaxRegression(int _inputSize, int _nclasses){
 	inputSize = _inputSize;
 	nclasses = _nclasses;
 	weightRandomInit(0.12);
+	cost = 0.0;
 }
 
-void SoftmaxRegression::copyfrom(SMR smr){
+void SoftmaxRegression::copyfrom(SoftmaxRegression smr){
 
 	Weight = getWeight();
 	Wgrad = getWgrad();
@@ -33,16 +34,16 @@ void SoftmaxRegression::copyfrom(SMR smr){
 void SoftmaxRegression::weightRandomInit(double epsilon){
 
 	Weight = Mat::ones(nclasses, inputSize, CV_64FC1);
-	double *pData;
+	double *pData = NULL;
 	for(int i=0; i < Weight.rows; i++){
 	
+		pData = Weight.ptr<double>(i);
 		for(int j=0; j < Weight.cols; j++){
 		
 			pData[j] = randu<double>();
 		}
 	}
 	Weight = Weight * (2*epsilon) - epsilon;
-	cost = 0.0;
 	Wgrad = Mat::zeros(nclasses, inputSize, CV_64FC1);
 }
 

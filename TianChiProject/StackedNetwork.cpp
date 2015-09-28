@@ -3,11 +3,8 @@
 #include <string>
 #include <math.h>
 #include <iostream>
-#include "SparseAutoencoder.h"
-#include "SparseAutoencoderActivation.h"
-#include "SoftmaxRegression.h"
-#include "Basefun.h"
 #include "StackedNetwork.h"
+#include "Basefun.h"
 
 #define ATD at<double>
 #define IS_TEST_FT 0
@@ -15,22 +12,27 @@
 using namespace std;
 using namespace cv;
 
+typedef SparseAutoencoder SA;
+typedef SoftmaxRegression SMR;
+
 StackedNetwork::StackedNetwork(vector<SA> _sc, SMR _smr){
 
-	int nLayers = _sc.size();
-	int nclasses = _smr.getnclasses();
+	nLayers = _sc.size();
+	nclasses = _smr.getnclasses();
 
 	for(int i=0; i < nLayers; i++){
-	
+
 		Mat tmp = _sc[i].getW1();
 		int rows = tmp.rows;
 		int cols = tmp.cols;
+		// for debugging...
+		// cout << rows << ", " << cols << endl;
 		scW.push_back(tmp);
-		scWg[i] = Mat::zeros(rows,cols,CV_64FC1);
+		scWg.push_back(Mat::zeros(rows,cols,CV_64FC1));
 
 		Mat tmp2 = _sc[i].getb1();
 		scb.push_back(tmp2);
-		scbg[i] = Mat::zeros(tmp2.size(),CV_64FC1);
+		scbg.push_back(Mat::zeros(tmp2.size(),CV_64FC1));
 	}
 
 	smrW = _smr.getWeight();
@@ -55,12 +57,11 @@ void StackedNetwork::Cost(Mat &x, Mat &y, double lambda){
 	Mat M = smrW * acti[acti.size() - 1];
 	Mat tmp;
 	reduce(M, tmp, 0, CV_REDUCE_MAX);
-	M = M + repeat(tmp, M.rows, 1); // ?
+	M = M - repeat(tmp, M.rows, 1); // ?
 	Mat p;
 	exp(M, p);
 	reduce(p, tmp, 0, CV_REDUCE_SUM);
 	divide(p, repeat(tmp, p.rows, 1), p);
-
 	Mat groundTruth = Mat::zeros(nclasses, nsamples, CV_64FC1);
 	for(int i=0; i<nsamples; i++){
 	
@@ -99,24 +100,24 @@ void StackedNetwork::Cost(Mat &x, Mat &y, double lambda){
 void StackedNetwork::gradientChecking(Mat &x, Mat &y, double lambda){
 
 	Cost(x, y,lambda);
-	Mat grad(scWg[0]);
+	Mat grad(scWg[1]);
 	cout<<"test fine-tune network !!!!"<<endl;
 	double epsilon = 1e-4;
-	for(int i=0; i<scW[0].rows; i++){
+	for(int i=0; i<scWg[1].rows; i++){
 	
-		for(int j=0; j<scW[0].cols; j++){
+		for(int j=0; j<scWg[1].cols; j++){
 		
-			double memo = scW[0].ATD(i,j);
-			scW[0].ATD(i,j) = memo + epsilon;
+			double memo = scWg[1].ATD(i,j);
+			scWg[1].ATD(i, j) = memo + epsilon;
 			Cost(x, y, lambda);
 			double value1 = cost;
-			scW[0].ATD(i,j) = memo - epsilon;
+			scWg[1].ATD(i, j) = memo - epsilon;
 			Cost(x, y, lambda);
 			double value2 = cost;
 			double tp = (value1 - value2) / (2*epsilon);
 			cout<< i << ", " << j << ", " << tp << ", " << grad.ATD(i, j)
 				<< ", " << grad.ATD(i, j) / tp << endl;
-			scW[0].ATD(i, j) = memo;
+			scWg[1].ATD(i, j) = memo;
 		}
 	}
 }
@@ -171,7 +172,7 @@ cv::Mat StackedNetwork::resultProdict(Mat &x){
     Mat M = smrW * acti[acti.size() - 1];
     Mat tmp;
     reduce(M, tmp, 0, CV_REDUCE_MAX);
-    M = M + repeat(tmp, M.rows, 1);
+    M = M - repeat(tmp, M.rows, 1);
     Mat p;
     exp(M, p);
     reduce(p, tmp, 0, CV_REDUCE_SUM);

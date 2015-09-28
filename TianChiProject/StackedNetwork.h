@@ -9,19 +9,18 @@
 #include <string>
 #include <math.h>
 #include "SparseAutoencoder.h"
-#include "SparseAutoencoderActivation.h"
 #include "SoftmaxRegression.h"
-#include "Basefun.h"
+
 
 class StackedNetwork{
 
 public:
-	StackedNetwork(std::vector<SA> _sc, SMR _smr);
+	StackedNetwork(std::vector<SparseAutoencoder> _sc, SoftmaxRegression _smr);
 
-	void Cost(Mat &x, Mat &y, double lambda);
-	void gradientChecking(Mat &x, Mat &y, double lambda);
-	void train(Mat &x, Mat &y, int batch, double lambda, double lrate, int maxIter);
-	cv::Mat resultProdict(Mat &x);
+	void Cost(cv::Mat &x, cv::Mat &y, double lambda);
+	void gradientChecking(cv::Mat &x, cv::Mat &y, double lambda);
+	void train(cv::Mat &x, cv::Mat &y, int batch, double lambda, double lrate, int maxIter);
+	cv::Mat resultProdict(cv::Mat &x);
 
 private:
 	std::vector<cv::Mat> scW;

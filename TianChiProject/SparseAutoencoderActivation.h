@@ -7,9 +7,6 @@
 #include <vector>
 #include <string>
 #include <math.h>
-#include "Basefun.h"
-#include "SoftmaxRegression.h"
-#include "SparseAutoencoder.h"
 
 /*sparse auto encoder activation*/
 struct SparseAutoencoderActivation{
@@ -19,6 +16,5 @@ struct SparseAutoencoderActivation{
 	cv::Mat aOutput;
 };
 
-typedef SparseAutoencoderActivation SAA;
 
 #endif

@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Basefun.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="SoftmaxRegression.cpp" />
     <ClCompile Include="SparseAutoencoder.cpp" />
     <ClCompile Include="StackedNetwork.cpp" />
