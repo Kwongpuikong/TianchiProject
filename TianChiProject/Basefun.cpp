@@ -17,16 +17,21 @@ Mat concatenateMat(vector<Mat> &vec){
 	int height = vec[0].rows;
 	int width = vec[0].cols;
 	Mat res = Mat::zeros(height*width, vec.size(), CV_64FC1);
+	// for debugging...
+	// cout << res(Range(300,350), Range(0,1)) << endl;
 	for(int i=0; i < vec.size(); i++){
 		Mat img(height, width, CV_64FC1);
 
 		vec[i].convertTo(img, CV_64FC1);
 		// ptmat is column vector
 		Mat ptmat = img.reshape(0, height*width); 
+		// if (i == 0) cout << ptmat(Range(300,350), Range(0,1)) << endl;
 		Rect roi = cv::Rect(i, 0, ptmat.cols, ptmat.rows);
 		Mat subView = res(roi);
 		ptmat.copyTo(subView);
 	}
+	// for debugging...
+	// cout << res(Range(300,350),Range(0,1)) << endl;
 	divide(res, 255.0, res);
 	return res;
 }
