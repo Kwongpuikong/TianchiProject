@@ -29,9 +29,9 @@ int main(){
 	readData(testX, testY, "mnist/t10k-images.idx3-ubyte", "mnist/t10k-labels.idx1-ubyte", 10000);
 
 	// use the first 500 training samples, for testing the algorithm.
-	// Rect roi = cv::Rect(0, 0, 500, trainX.rows);
+	// Rect roi = cv::Rect(0, 0, 60000, trainX.rows);
 	// trainX = trainX(roi);
-	// roi = cv::Rect(0, 0, 500, trainY.rows);
+	// roi = cv::Rect(0, 0, 60000, trainY.rows);
 	// trainY = trainY(roi);
 
 	cout << "Train: \n"
@@ -55,18 +55,22 @@ int main(){
 	// learning_rate is the step size for SGD.
 	double learning_rate = 2e-2;
 	// maxIter is the max num of iterations.
-	int maxIter = 80000;
+	int maxIter = 2;
 	// num_of_sa is the layers of stacked auto encoder. 
 	int num_of_sa = 2;
 	// input_size is a vector implies the input_size of each sa.
-	int tmp_input_size[] = { 28 * 28, 600 };
+	int tmp_input_size[] = { 28 * 28, 800 };
 	vector<int> input_size(tmp_input_size, tmp_input_size + num_of_sa);
 	// hidden_size is the numbers of a feature.
-	int tmp_hidden_size[] = { 600, 800 };
+	int tmp_hidden_size[] = { 800, 1000 };
 	vector<int> hidden_size(tmp_hidden_size, tmp_hidden_size + num_of_sa);
 
-	vector<SA> stackedcoding;
+	// vector<SA> stackedcoding;
 	vector<Mat> activations;
+
+	vector<Mat> stackedW;
+	vector<Mat> stackedb;
+
 	for (int i = 0; i < num_of_sa; i++){
 		
 		cout << "Training no." << (i + 1) << " sc..." << endl;
@@ -74,23 +78,36 @@ int main(){
 		Mat tempX;
 		if (i == 0){
 		
-			trainX.copyTo(tempX);
+			// trainX.copyTo(tempX);
+			tempX = trainX.clone();
+
 		}
 		else{
 		
-			activations[activations.size() - 1].copyTo(tempX);
+			activations[i - 1].copyTo(tempX);
 		}
 	
 		SA tmpsa(input_size[i], hidden_size[i]);
+		
 		tmpsa.train(tempX, batch, lambda, sparsityParam, beta, learning_rate, maxIter);
+
 		Mat tmpacti = tmpsa.getW1() * tempX + repeat(tmpsa.getb1(), 1, tempX.cols);
 		tmpacti = sigmoid(tmpacti);
-		stackedcoding.push_back(tmpsa);
 		activations.push_back(tmpacti);
+
+		// stackedcoding.push_back(tmpsa);
+		stackedW.push_back(tmpsa.getW1());
+		stackedb.push_back(tmpsa.getb1());
+		// activations.push_back(tmpacti);
+		
 	}
+	// release memory.
+	activations.clear();
+
+	// !! The above pass debug.
 
 	// smr_input_size is the size of a feature.
-	int smr_input_size = 800;
+	int smr_input_size = 600;
 	// smr_nclasses is the num of classes.
 	int smr_nclasses = 10;
 	// smr_lambda is the weight decay.
@@ -98,19 +115,21 @@ int main(){
 	// smr_learning_rate is the setp size of SGD.
 	double smr_learning_rate = 2e-2;
 	// smr_maxIter is the max iterations.
-	int smr_maxIter = 80000;
+	int smr_maxIter = 10;
 	SMR smr(smr_input_size, smr_nclasses);
 	smr.train(activations[activations.size() - 1], trainY, batch, smr_lambda, smr_learning_rate, smr_maxIter);
 
 	// construct a stacked network
-	StackedNetwork sc(stackedcoding, smr);
+	// StackedNetwork sc(stackedcoding, smr);
+	StackedNetwork sc(stackedW, stackedb, smr);
+	
 
 	// sc_lambda is for sc.train
 	double sc_lambda = 1e-4;
 	// sc_learning_rate is the step size for SGD.
 	double sc_learning_rate = 2e-2;
 	// sc_maxIter is the max iterations.
-	int sc_maxIter = 80000;
+	int sc_maxIter = 10;
 	sc.train(trainX, trainY, batch, sc_lambda, sc_learning_rate, maxIter);
 	Mat result = sc.resultProdict(testX);
 

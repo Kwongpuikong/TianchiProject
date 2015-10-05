@@ -41,6 +41,30 @@ StackedNetwork::StackedNetwork(vector<SA> _sc, SMR _smr){
 	cost = 0.0;
 }
 
+StackedNetwork::StackedNetwork(vector<Mat> _scW, vector<Mat> _scb, SMR _smr){
+
+	nLayers = _scW.size();
+	nclasses = _smr.getnclasses();
+
+	for (int i = 0; i < nLayers; i++){
+
+		Mat tmp = _scW[i];
+		int rows = tmp.rows;
+		int cols = tmp.cols;
+		scW.push_back(tmp);
+		scWg.push_back(Mat::zeros(rows, cols, CV_64FC1));
+
+		tmp = _scb[i];
+		scb.push_back(tmp);
+		scbg.push_back(Mat::zeros(tmp.size(), CV_64FC1));
+	}
+
+	smrW = _smr.getWeight();
+	smrWg = Mat::zeros(smrW.size(), CV_64FC1);
+
+	cost = 0.0;
+}
+
 
 void StackedNetwork::Cost(Mat &x, Mat &y, double lambda){
 

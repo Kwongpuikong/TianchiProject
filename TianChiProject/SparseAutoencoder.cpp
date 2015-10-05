@@ -237,32 +237,37 @@ void SparseAutoencoder::train(cv::Mat &data, int batch, double lambda, double sp
 	}
 }
 
+
 Mat SparseAutoencoder::getW1(){
 
-	Mat res;
-	W1.copyTo(res);
-	return res;
+	 // Mat res;
+	 // W1.copyTo(res);
+	 // return res;
+	return W1;
 }
 
 Mat SparseAutoencoder::getW2(){
 
-	Mat res;
-	W2.copyTo(res);
-	return res;
+	// Mat res;
+	// W2.copyTo(res);
+	// return res;
+	return W2;
 }
 
 Mat SparseAutoencoder::getb1(){
 
-	Mat res;
-	b1.copyTo(res);
-	return res;
+	// Mat res;
+	// b1.copyTo(res);
+	// return res;
+	return b1;
 }
 
 Mat SparseAutoencoder::getb2(){
 
-	Mat res;
-	b2.copyTo(res);
-	return res;
+	// Mat res;
+	// b2.copyTo(res);
+	// return res;
+	return b2;
 }
 
 int SparseAutoencoder::getinputSize(){

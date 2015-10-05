@@ -16,6 +16,7 @@ class StackedNetwork{
 
 public:
 	StackedNetwork(std::vector<SparseAutoencoder> _sc, SoftmaxRegression _smr);
+	StackedNetwork(std::vector<cv::Mat> _scW, std::vector<cv::Mat> _scb, SoftmaxRegression _smr);
 
 	void Cost(cv::Mat &x, cv::Mat &y, double lambda);
 	void gradientChecking(cv::Mat &x, cv::Mat &y, double lambda);
